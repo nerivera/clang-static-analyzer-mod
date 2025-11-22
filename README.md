@@ -1,3 +1,5 @@
+This repository contains a set of modifications to [llvm-project](https://github.com/llvm/llvm-project) to enable additional checks for Clang Static Analyzer and Clang-Tidy. Specifically, Clang Static Analyzer is modified to report places where a program fails to handle out-of-memory conditions and implicitly assumes that dynamic memory allocation (of any kind) succeeds.
+
 # Directory Structure
 
 The `llvm-changes` directory mirrors the directory structure of the [llvm-project](https://github.com/llvm/llvm-project) repo, but it only contains new or modified files. The file `llvm-version.txt` contains a commit hash or tag name corresponding to the llvm-project version over which the `llvm-changes` directory masks. While a branch name might also work, branch tips are constantly updated and therefore don't serve the purpose of reproducability.
