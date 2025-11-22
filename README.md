@@ -1,4 +1,4 @@
-This repository contains a set of modifications to [llvm-project](https://github.com/llvm/llvm-project) to enable additional checks for Clang Static Analyzer and Clang-Tidy. Specifically, Clang Static Analyzer is modified to report places where a program fails to handle out-of-memory conditions and implicitly assumes that dynamic memory allocation (of any kind) succeeds.
+This repository contains a set of modifications to [llvm-project](https://github.com/llvm/llvm-project) to enable additional checks for Clang Static Analyzer and Clang-Tidy. Specifically, Clang Static Analyzer is modified to report places where a program fails to handle out-of-memory conditions and implicitly assumes that dynamic memory allocation (of any kind) succeeds, and Clang-Tidy is modified to include a new check within a new module, facilitating future custom Clang-Tidy checks.
 
 # Directory Structure
 
