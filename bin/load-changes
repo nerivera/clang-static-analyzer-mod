@@ -1,0 +1,21 @@
+#!/bin/bash
+#
+# Copy changes from llvm-changes to llvm-project
+
+set -euo pipefail
+
+err() {
+  echo "Error: $*" >&2
+}
+
+repo_dir="$(dirname "$(dirname "$(realpath "$0")")")"
+llvm_project="$repo_dir/llvm-project"
+llvm_changes="$repo_dir/llvm-changes"
+
+if [[ ! -d "$llvm_project" ]]; then
+  err "Could not find llvm-project repo at $llvm_project.
+Follow the instructions in README.md to clone the repo and set up the symlink."
+  exit 1
+fi
+
+rsync -a "$llvm_changes/" "$llvm_project/"

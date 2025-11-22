@@ -1,0 +1,89 @@
+#!/bin/bash
+#
+# Compile the llvm-project repo
+
+set -euo pipefail
+
+err() {
+  echo "$(basename "$0"): $*" >&2
+}
+
+note() {
+  echo "$(basename "$0"): $*"
+}
+
+VALID_GENERATORS="Valid generators are: ninja, make."
+
+repo_dir="$(dirname "$(dirname "$(realpath "$0")")")"
+llvm_build="$repo_dir/llvm-build"
+llvm_install="$repo_dir/llvm-install"
+llvm_project="$repo_dir/llvm-project"
+
+if [[ ! -d "$llvm_project" ]]; then
+  err "Could not find llvm-project repo at $llvm_project.
+Follow the instructions in README.md to clone the repo and set up the symlink."
+  exit 1
+fi
+
+mkdir -p "$llvm_build"
+mkdir -p "$llvm_install"
+
+OPTIONS=$(getopt -o "G:,h" -l "help,cmake-exec:,ninja-exec:,make-exec:,clang-tidy" -- "$@")
+eval set -- "$OPTIONS"
+
+generator="ninja"
+cmake_exec="cmake"
+ninja_exec="ninja"
+make_exec="make"
+clang_tidy=0
+
+while true; do
+  case "$1" in
+    -h|--help) note "\
+Compile the llvm-project repo.
+The compiled binaries will be located in $llvm_build/bin.
+Options
+  -h,--help: Show this help message and exit.
+  -G <generator>: Generator to use for compilation. $VALID_GENERATORS
+  --<cmake|ninja|make>-exec <path>: Executable to use for CMake, Ninja, and Make.
+  --clang-tidy: If specified, compile clang-tidy in addition to clang."; exit 0 ;;
+    -G) generator="$2"; shift 2 ;;
+    --cmake-exec) cmake_exec="$2"; shift 2 ;;
+    --ninja-exec) ninja_exec="$2"; shift 2 ;;
+    --make-exec) make_exec="$2"; shift 2 ;;
+    --clang-tidy) clang_tidy=1; shift ;;
+    --) shift; break ;;
+    *) err "Invalid option: $1"; exit 2 ;;
+  esac
+done
+
+case "$generator" in
+  ninja) cmake_generator="Ninja" ;;
+  make) cmake_generator="Unix Makefiles" ;;
+  *) err "Invalid generator '$generator'. $VALID_GENERATORS"; exit 2 ;;
+esac
+
+"$cmake_exec" -G "$cmake_generator" -S "$llvm_project/llvm" -B "$llvm_build" \
+  -DLLVM_ENABLE_PROJECTS=clang \
+  -DLLVM_INSTALL_UTILS=ON \
+  -DCMAKE_INSTALL_PREFIX="$llvm_install" \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DLLVM_INCLUDE_TESTS=OFF
+
+case "$generator" in
+  ninja) "$ninja_exec" -C "$llvm_build" install ;;
+  make) "$make_exec" -C "$llvm_build" install ;;
+esac
+
+if (( clang_tidy == 1 )); then
+  init_wd="$(pwd)"
+  note "Entering directory '$llvm_build'"
+  cd "$llvm_build"
+  "$cmake_exec" -G "$cmake_generator" -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra" .
+  case "$generator" in
+    ninja) "$ninja_exec" clang-tidy ;;
+    make) "$make_exec" clang-tidy ;;
+  esac
+  note "Leaving directory '$llvm_build'"
+  cd "$init_wd"
+fi

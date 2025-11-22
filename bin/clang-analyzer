@@ -1,0 +1,22 @@
+#!/bin/bash
+#
+# Run the modified version of the Clang Static Analyzer
+
+set -euo pipefail
+
+err() {
+  echo "Error: $*" >&2
+}
+
+repo_dir="$(dirname "$(dirname "$(realpath "$0")")")"
+build_dir="$repo_dir/llvm-build"
+clang_exec="$build_dir/bin/clang"
+
+if [[ ! -e "$clang_exec" ]]; then
+  err "the file '$clang_exec' does not exist.
+If you are a student, this is an unexpected issue.
+Otherwise, you may need to compile llvm-project using the build-llvm script."
+  exit 1
+fi
+
+"$clang_exec" -g --analyze -Xanalyzer -analyzer-output=text -Xanalyzer -analyzer-config -Xanalyzer suppress-null-return-paths=false,cfg-malloc-failure=true $@

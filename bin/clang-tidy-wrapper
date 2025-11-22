@@ -1,0 +1,22 @@
+#!/bin/bash
+#
+# Run the modified version of the Clang-Tidy
+
+set -euo pipefail
+
+err() {
+  echo "Error: $*" >&2
+}
+
+repo_dir="$(dirname "$(dirname "$(realpath "$0")")")"
+build_dir="$repo_dir/llvm-build"
+clang_tidy_exec="$build_dir/bin/clang-tidy"
+
+if [[ ! -e "$clang_tidy_exec" ]]; then
+  err "the file '$clang_tidy_exec' does not exist.
+If you are a student, this is an unexpected issue.
+Otherwise, you may need to compile llvm-project using the build-llvm script with the --clang-tidy flag."
+  exit 1
+fi
+
+"$clang_tidy_exec" -checks="-*,bugprone-*,caltechcs-*,concurrency-*,cppcoreguidelines-*,google-*,readability-*" $@

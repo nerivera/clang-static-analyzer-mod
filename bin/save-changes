@@ -1,0 +1,35 @@
+#!/bin/bash
+#
+# Overwrite llvm-changes to contain only new or modified files from llvm-project
+
+set -euo pipefail
+
+err() {
+  echo "Error: $*" >&2
+}
+
+repo_dir="$(dirname "$(dirname "$(realpath "$0")")")"
+llvm_project="$repo_dir/llvm-project"
+llvm_changes="$repo_dir/llvm-changes"
+
+if [[ ! -d "$llvm_project" ]]; then
+  err "Could not find llvm-project repo at $llvm_project.
+Follow the instructions in README.md to clone the repo and set up the symlink."
+  exit 1
+fi
+
+if [[ $(git -C "$llvm_project" ls-files -d) ]]; then
+  error_message="llvm-project contains unstaged deletions.
+We don't yet have a system for deleting files from llvm-project; see README.md."
+  err "$error_message"
+  exit 1
+fi
+
+changes_file=$(mktemp)
+temp_dir=$(mktemp -d)
+trap 'rm -f "$changes_file"; [ "${temp_dir-}" ] && rm -rf "$temp_dir"' EXIT
+git -C "$llvm_project" ls-files -mo --exclude-standard > "$changes_file"
+rsync -a --files-from="$changes_file" "$llvm_project/" "$temp_dir/"
+rm -rf "$llvm_changes"
+mv "$temp_dir" "$llvm_changes"
+unset temp_dir
